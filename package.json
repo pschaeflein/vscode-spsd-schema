@@ -2,7 +2,7 @@
   "name": "sitedesign-schema",
   "displayName": "sitedesign-schema",
   "description": "Generate extended schema for SiteScript actions",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "paulschaeflein",
   "icon": "media/icon.png",
   "galleryBanner": {
@@ -42,18 +42,18 @@
         "url": "./sitescript.schema.json"
       }
     ],
-    "configuration":[
+    "configuration": [
       {
         "title": "Site Design JSON Schema",
         "properties": {
-          "sitedesign-schema.allowTelemetry":{
-            "type":"boolean",
-            "default":true,
+          "sitedesign-schema.allowTelemetry": {
+            "type": "boolean",
+            "default": true,
             "description": "Allow anonymous telemetry for bug tracking"
           },
-          "sitedesign-schema.schemaUrl":{
-            "type":"string",
-            "default":"https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json",
+          "sitedesign-schema.schemaUrl": {
+            "type": "string",
+            "default": "https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json",
             "description": "URL of the official JSON schema file"
           }
         }
