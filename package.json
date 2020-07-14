@@ -2,17 +2,27 @@
   "name": "sitedesign-schema",
   "displayName": "sitedesign-schema",
   "description": "Generate extended schema for SiteScript actions",
+  "version": "1.0.0",
   "publisher": "schaeflein",
   "icon": "./media/icon.png",
-  "repository": {
-    "url": ""
+  "galleryBanner": {
+    "color": "#5B8726",
+    "theme": "light"
   },
-  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pschaeflein/vscode-spsd-schema"
+  },
   "engines": {
     "vscode": "^1.47.0"
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "SharePoint",
+    "Site Design",
+    "Site Scripts"
   ],
   "activationEvents": [
     "workspaceContains:**/*.sitescript.json",
@@ -29,7 +39,7 @@
     "jsonValidation": [
       {
         "fileMatch": "*.sitescript.json",
-        "url": "./sharepoint.sitescript.json"
+        "url": "./sitescript.schema.json"
       }
     ]
   },
