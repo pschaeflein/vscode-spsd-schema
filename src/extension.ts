@@ -3,7 +3,7 @@ import * as chalk from 'chalk';
 import * as $RefParser from 'json-schema-ref-parser';
 
 const schemaUrl = "https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json"
-const schemaFilename = "sharepoint.sitescript.json"
+const schemaFilename = "sitescript.schema.json"
 const msInAWeek = 604800000;
 let extensionPath: vscode.Uri;
 let localFilepath: vscode.Uri;
