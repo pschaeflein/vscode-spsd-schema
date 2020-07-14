@@ -4,7 +4,7 @@ Add snippets to the JSON schema for SharePoint site script actions.
 
 ## Features
 
-This extension will download the current JSON schema for SharePoint Site Design script actions () and process the file to:
+This extension will download the current JSON schema for SharePoint Site Design script actions and process the file to:
 - correct errors in schema
 - inject snippets for VSCode
 
@@ -25,9 +25,3 @@ The refresh command will download and process the official JSON schema document 
 ## JSON Schema association
 
 Files with the suffix `.sitescript.json` are associated with local, enhanced schema file ({extensionPath}/sharepoint.sitescript.json)
-
-
-
-### 1.0.0
-
-Initial release

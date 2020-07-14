@@ -41,6 +41,23 @@
         "fileMatch": "*.sitescript.json",
         "url": "./sitescript.schema.json"
       }
+    ],
+    "configuration":[
+      {
+        "title": "Site Design JSON Schema",
+        "properties": {
+          "sitedesign-schema.allowTelemetry":{
+            "type":"boolean",
+            "default":true,
+            "description": "Allow anonymous telemetry for bug tracking"
+          },
+          "sitedesign-schema.schemaUrl":{
+            "type":"string",
+            "default":"https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json",
+            "description": "URL of the official JSON schema file"
+          }
+        }
+      }
     ]
   },
   "scripts": {
@@ -71,6 +88,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "applicationinsights": "^1.8.2",
     "chalk": "^4.1.0",
     "json-schema-ref-parser": "^9.0.3"
   }

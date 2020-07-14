@@ -1,14 +1,20 @@
 import * as vscode from 'vscode';
 import * as chalk from 'chalk';
 import * as $RefParser from 'json-schema-ref-parser';
+import * as AppInsights from 'applicationinsights';
+import { ISiteDesignSchemaConfiguration } from './ISiteDesignSchemaConfiguration';
 
-const schemaUrl = "https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json"
 const schemaFilename = "sitescript.schema.json"
 const msInAWeek = 604800000;
-let extensionPath: vscode.Uri;
-let localFilepath: vscode.Uri;
 const patternEnumStart = "^(";
 const patternEnumEnd = ")$";
+
+let extConfiguration: ISiteDesignSchemaConfiguration;
+//const schemaUrl = "https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json"
+let schemaUrl: string = "";
+let extensionPath: vscode.Uri;
+let localSchemaFilepath: vscode.Uri;
+let pkgVersion: string;
 
 let outputChannel: vscode.OutputChannel
 const log = (message: string) => {
@@ -22,28 +28,68 @@ const logger = {
   error: (message: string) => log(`${chalk.white.bgRed.bold(' ERROR ')} ${message}`)
 }
 
+enum LocalSchemaStatus {
+  unknown,
+  current,
+  outOfDate,
+  missing
+}
+
 export async function activate(context: vscode.ExtensionContext) {
+  // create a log channel
   outputChannel = vscode.window.createOutputChannel('sitedesign-schema')
   context.subscriptions.push(outputChannel)
 
+  // get info about extension
   extensionPath = context.extensionUri
-  localFilepath = vscode.Uri.joinPath(extensionPath, schemaFilename)
-  // if local file not found, or is a week old, refresh it
-  const stat = await vscode.workspace.fs.stat(localFilepath);
+  const pkgData = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionPath, "package.json"));
+  let pkg = JSON.parse(Buffer.from(pkgData).toString('utf8'));
+  pkgVersion = pkg.version;
+
+  // get the user-editable configuration
+  extConfiguration = vscode.workspace.getConfiguration().get<ISiteDesignSchemaConfiguration>('sitedesign-schema');
+
+
+  if (extConfiguration.allowTelemetry) {
+    setupAppInsights();
+  }
+
+  let performRefresh = false;
+  let status: LocalSchemaStatus = LocalSchemaStatus.unknown;
+
+  localSchemaFilepath = vscode.Uri.joinPath(extensionPath, schemaFilename)
+
+  const stat = await vscode.workspace.fs.stat(localSchemaFilepath);
   if (stat) {
     let age = new Date().getTime() - stat.mtime;
     if (age > msInAWeek) {
-      logger.warn("schema is old");
-      getAndRefreshSchema();
+      performRefresh = true;
+      status = LocalSchemaStatus.outOfDate;
     }
     else {
-      logger.info("local schema is current");
-
+      status = LocalSchemaStatus.current;
     }
   }
   else {
-    logger.error("local schema not found");
-    getAndRefreshSchema();
+    performRefresh = true;
+    status = LocalSchemaStatus.missing;
+  }
+
+  let localStatusMessage = `Local schema status: ${LocalSchemaStatus[status]}`;
+  (status === LocalSchemaStatus.current) 
+    ? logger.info(localStatusMessage)
+    : logger.warn(localStatusMessage);
+    
+  if (performRefresh) {
+    getAndRefreshSchema(extConfiguration.schemaUrl);
+  }
+
+  if (extConfiguration.allowTelemetry) {
+    let eventProps = {
+      refresh: performRefresh,
+      status: LocalSchemaStatus[status]
+    };
+    AppInsights.defaultClient.trackEvent({ name: 'activate-extension', properties: eventProps });
   }
 
 
@@ -51,16 +97,35 @@ export async function activate(context: vscode.ExtensionContext) {
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
   let disposable = vscode.commands.registerCommand('sitedesign-schema.refreshSchema', () => {
-    getAndRefreshSchema();
+    getAndRefreshSchema(extConfiguration.schemaUrl);
 
     // Display a message box to the user
     vscode.window.showInformationMessage('Refresh queued');
+ 
+    if (extConfiguration.allowTelemetry) {
+      let eventProps = {
+        refresh: true,
+        status: LocalSchemaStatus[status]
+      };
+      AppInsights.defaultClient.trackEvent({ name: 'sitedesign-schema.refreshSchema', properties: eventProps });
+    }
+
   });
+
+  // Example: Listening to configuration changes
+  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+
+    if (e.affectsConfiguration('sitedesign-schema')) {
+      logger.info("Reloading configuration");
+      extConfiguration = vscode.workspace.getConfiguration().get<ISiteDesignSchemaConfiguration>('sitedesign-schema');
+    }
+
+  }));
 
   context.subscriptions.push(disposable);
 }
 
-async function getAndRefreshSchema() {
+async function getAndRefreshSchema(schemaUrl: string) {
   try {
     const schema = await $RefParser.parse(schemaUrl);
     logger.info("schema downloaded");
@@ -154,9 +219,19 @@ async function getAndRefreshSchema() {
 
 async function storeData(schema: any) {
   const writeData = Buffer.from(JSON.stringify(schema, null, 2), 'utf8')
-  await vscode.workspace.fs.writeFile(localFilepath, writeData);
+  await vscode.workspace.fs.writeFile(localSchemaFilepath, writeData);
 }
 
+function setupAppInsights() {
+  AppInsights.setup('9b0d2858-d71c-494d-a19a-ee9950352bdf');
+  //delete AppInsights.defaultClient.context.tags['ai.cloud.roleInstance'];
+  AppInsights.Configuration.setAutoCollectExceptions(true);
+  AppInsights.Configuration.setAutoCollectPerformance(true);
+  AppInsights.defaultClient.commonProperties = {
+    extVersion: pkgVersion,
+    vsVersion: vscode.version
+  };
+}
 
 // this method is called when your extension is deactivated
 export function deactivate() { }
