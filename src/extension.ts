@@ -19,7 +19,6 @@ let pkgVersion: string;
 let outputChannel: vscode.OutputChannel
 const log = (message: string) => {
   outputChannel.appendLine(message)
-  outputChannel.show(true)
 }
 
 const logger = {
