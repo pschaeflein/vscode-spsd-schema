@@ -1,4 +1,5 @@
 export interface ISiteDesignSchemaConfiguration {
-  schemaUrl: string
-  allowTelemetry: boolean,
+  schemaUrl: string;
+  allowTelemetry: boolean;
+  serveSchemaUrl: string;
 }

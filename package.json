@@ -1,10 +1,10 @@
 {
   "name": "sitedesign-schema",
-  "displayName": "sitedesign-schema",
-  "description": "Generate extended schema for SiteScript actions",
+  "displayName": "spfx-schemas",
+  "description": "Generate extended schemas for SiteScript actions and gulp serve configurations",
   "version": "1.1.0",
   "publisher": "paulschaeflein",
-  "icon": "media/icon.png",
+  "icon": "media/spfx-schemas.png",
   "galleryBanner": {
     "color": "#5B8726",
     "theme": "light"
@@ -22,29 +22,41 @@
   "keywords": [
     "SharePoint",
     "Site Design",
-    "Site Scripts"
+    "Site Scripts",
+    "SharePoint Framework",
+    "SPFx"
   ],
   "activationEvents": [
     "workspaceContains:**/*.sitescript.json",
-    "onCommand:sitedesign-schema.refreshSchema"
+    "workspaceContains:config/serve.json",
+    "onCommand:sitedesign-schema.refreshSchema",
+    "onCommand:sitedesign-schema.refreshServeSchema"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "sitedesign-schema.refreshSchema",
-        "title": "SiteDesign: Refresh local schema"
+        "title": "SPFx Schema: Refresh Site Action schema"
+      },
+      {
+        "command": "sitedesign-schema.refreshServeSchema",
+        "title": "SPFx Schema: Refresh serve.json schema"
       }
     ],
     "jsonValidation": [
       {
         "fileMatch": "*.sitescript.json",
         "url": "./sitescript.schema.json"
+      },
+      {
+        "fileMatch": "config/serve.json",
+        "url":"./serve.schema.json"
       }
     ],
     "configuration": [
       {
-        "title": "Site Design JSON Schema",
+        "title": "SPFx Schemas",
         "properties": {
           "sitedesign-schema.allowTelemetry": {
             "type": "boolean",
@@ -54,7 +66,12 @@
           "sitedesign-schema.schemaUrl": {
             "type": "string",
             "default": "https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json",
-            "description": "URL of the official JSON schema file"
+            "description": "URL of the official JSON schema file for Site Actions"
+          },
+          "sitedesign-schema.serveSchemaUrl": {
+            "type":"string",
+            "default":"https://developer.microsoft.com/json-schemas/core-build/serve.schema.json",
+            "description": "URL of the official JSON schema file for serve.json"
           }
         }
       }
