@@ -2,7 +2,7 @@
   "name": "sitedesign-schema",
   "displayName": "spfx-schemas",
   "description": "Generate extended schemas for SiteScript actions and gulp serve configurations",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "publisher": "paulschaeflein",
   "icon": "media/spfx-schemas.png",
   "galleryBanner": {
@@ -51,7 +51,7 @@
       },
       {
         "fileMatch": "config/serve.json",
-        "url":"./serve.schema.json"
+        "url": "./serve.schema.json"
       }
     ],
     "configuration": [
@@ -69,8 +69,8 @@
             "description": "URL of the official JSON schema file for Site Actions"
           },
           "sitedesign-schema.serveSchemaUrl": {
-            "type":"string",
-            "default":"https://developer.microsoft.com/json-schemas/core-build/serve.schema.json",
+            "type": "string",
+            "default": "https://developer.microsoft.com/json-schemas/core-build/serve.schema.json",
             "description": "URL of the official JSON schema file for serve.json"
           }
         }
