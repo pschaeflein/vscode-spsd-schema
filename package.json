@@ -2,7 +2,7 @@
   "name": "sitedesign-schema",
   "displayName": "spfx-schemas",
   "description": "Generate extended schemas for SiteScript actions and gulp serve configurations",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "publisher": "paulschaeflein",
   "icon": "media/spfx-schemas.png",
   "galleryBanner": {
