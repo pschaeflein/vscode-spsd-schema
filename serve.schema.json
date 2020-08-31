@@ -71,13 +71,11 @@
       "type": "boolean"
     },
     "serveConfigurations": {
-      "serveConfigurations": {
-        "oneOf": [
-          {
-            "$ref": "#/definitions/serveConfigurations"
-          }
-        ]
-      }
+      "oneOf": [
+        {
+          "$ref": "#/definitions/serveConfigurations"
+        }
+      ]
     }
   },
   "definitions": {
