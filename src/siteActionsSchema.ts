@@ -1,19 +1,57 @@
 import * as vscode from 'vscode';
+import * as AppInsights from 'applicationinsights';
 import * as $RefParser from 'json-schema-ref-parser';
+import { Utilities, LocalSchemaStatus } from './utilities';
+import { ISiteDesignSchemaConfiguration } from './ISiteDesignSchemaConfiguration';
 
 export class SiteActionSchema {
   static LocalSchemaFilename: string = "sitescript.schema.json";
 
-  public constructor() {
+  private context: vscode.ExtensionContext;
+  private configuration: ISiteDesignSchemaConfiguration;
+  private outputChannel: vscode.OutputChannel;  
+  private storeData: (schema: any, schemaFilePath: string) => Promise<void>;
+
+  public constructor(
+    context: vscode.ExtensionContext, 
+    configuration: ISiteDesignSchemaConfiguration, 
+    outputChannel: vscode.OutputChannel, 
+    storeData: (schema: any, schemaFilePath: string) => Promise<void>) {
+        this.context = context;
+        this.configuration = configuration;
+        this.outputChannel = outputChannel;
+        this.storeData = storeData;
   }
 
-  public static async getAndRefreshSchema(schemaUrl: string, outputChannel: vscode.OutputChannel, storeData: (schema: any, schemaFilePath: string) => Promise<void>) {
+  public async checkSchemaFile()
+  {
+    let siteActionFileStatus = await Utilities.getLocalFileStatus(vscode.Uri.joinPath(this.context.extensionUri, SiteActionSchema.LocalSchemaFilename));
+    let performRefresh = (siteActionFileStatus != LocalSchemaStatus.current);
+
+    let localStatusMessage = `Local Site Action schema status: ${LocalSchemaStatus[siteActionFileStatus]}`;
+    this.outputChannel.appendLine(localStatusMessage);
+
+    if (performRefresh) {
+      await this.getAndRefreshSchema();  //extConfiguration.schemaUrl, this.outputChannel, storeData
+    }
+
+    if (this.configuration.allowTelemetry && this.context.extensionMode === vscode.ExtensionMode.Production) {
+      let eventProps = {
+        schema: SiteActionSchema.LocalSchemaFilename,
+        refresh: performRefresh,
+        status: LocalSchemaStatus[siteActionFileStatus]
+      };
+      AppInsights.defaultClient.trackEvent({ name: 'refresh-schema', properties: eventProps });
+    }
+  }
+
+  public async getAndRefreshSchema() {
     const patternEnumStart = "^(";
     const patternEnumEnd = ")$";
 
     try {
-      const schema = await $RefParser.parse(schemaUrl);
-      outputChannel.appendLine("schema downloaded");
+      const schema = await $RefParser.parse(this.configuration.schemaUrl);
+      this.outputChannel.appendLine("schema downloaded");
 
       const actionsProp = schema.properties["actions"] as $RefParser.JSONSchema;
       const actionItems = actionsProp["items"] as $RefParser.JSONSchema;
@@ -94,11 +132,14 @@ export class SiteActionSchema {
       let ai2 = actionItems as any;
       ai2.defaultSnippets = actionItemsSnippets;
 
-      await storeData(schema, this.LocalSchemaFilename);
+      await this.storeData(schema, SiteActionSchema.LocalSchemaFilename);
 
-      outputChannel.appendLine("schema refresh complete");
+      this.outputChannel.appendLine("schema refresh complete");
     } catch (error) {
-      outputChannel.appendLine(error);
+      this.outputChannel.appendLine(error);
+      if (this.configuration.allowTelemetry && this.context.extensionMode === vscode.ExtensionMode.Production) {
+        AppInsights.defaultClient.trackException(error);
+      }
     }
   }
 

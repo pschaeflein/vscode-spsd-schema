@@ -85,10 +85,30 @@
       "type": "object",
       "properties": {
         "location": {
-          "type": "string"
+          "type": "string",
+          "description": "CustomAction type, or location of commands",
+          "defaultSnippets": [
+            {
+              "description": "Application Customizer extension",
+              "body": "ClientSideExtension.ApplicationCustomizer"
+            },
+            {
+              "description": "The context menu of the item(s)",
+              "body": "ClientSideExtension.ListViewCommandSet.ContextMenu"
+            },
+            {
+              "description": "The top command set menu in a list or library",
+              "body": "ClientSideExtension.ListViewCommandSet.CommandBar"
+            },
+            {
+              "description": "Both the context menu and the command bar",
+              "body": "ClientSideExtension.ListViewCommandSet"
+            }
+          ]
         },
         "properties": {
-          "type": "object"
+          "type": "object",
+          "description": "An optional JSON object containing properties that are available via the 'this.properties' member."
         }
       },
       "required": [
@@ -99,6 +119,7 @@
       "type": "object",
       "patternProperties": {
         "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$": {
+          "description": "Simulates a custom action. When you deploy and register this component in a site, you'll create this CustomAction object and describe all the different properties you can set on it.",
           "oneOf": [
             {
               "$ref": "#/definitions/customActionDetails"
@@ -109,11 +130,26 @@
     },
     "serveConfiguration": {
       "type": "object",
+      "description": "'gulp serve' configuration",
       "properties": {
         "pageUrl": {
-          "type": "string"
+          "type": "string",
+          "description": "URL of the modern page that should be used to test the extension"
         },
         "customActions": {
+          "description": "The list of extensions that should be loaded",
+          "defaultSnippets": [
+            {
+              "label": "",
+              "description": "GUID of the extension",
+              "body": {
+                "${1:Extension GUID}": {
+                  "location": "$2",
+                  "properties": {}
+                }
+              }
+            }
+          ],
           "$ref": "#/definitions/customAction"
         },
         "fieldCustomizers": {
@@ -139,6 +175,7 @@
     },
     "serveConfigurations": {
       "type": "object",
+      "description": "Configuration objects used as the '--config' parameter for local testing",
       "patternProperties": {
         "[a-z]": {
           "allOf": [

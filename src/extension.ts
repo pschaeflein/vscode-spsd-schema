@@ -38,85 +38,46 @@ export async function activate(context: vscode.ExtensionContext) {
 
   if (extConfiguration.allowTelemetry) {
     setupAppInsights();
+    if (context.extensionMode === vscode.ExtensionMode.Production) {
+      AppInsights.defaultClient.trackEvent({ name: 'activate-extension' });
+    }
   }
 
   // check the files..
-  let siteActionFileStatus = await Utilities.getLocalFileStatus(vscode.Uri.joinPath(context.extensionUri, SiteActionSchema.LocalSchemaFilename));
-  let performRefresh = (siteActionFileStatus != LocalSchemaStatus.current);
-  
-  let localStatusMessage = `Local Site Action schema status: ${LocalSchemaStatus[siteActionFileStatus]}`;
-  (siteActionFileStatus === LocalSchemaStatus.current) 
-    ? logger.info(localStatusMessage)
-    : logger.warn(localStatusMessage);
-    
-  if (performRefresh) {
-    await SiteActionSchema.getAndRefreshSchema(extConfiguration.schemaUrl, outputChannel, storeData);
-  }
+  let siteActionSchema = new SiteActionSchema(context, extConfiguration, outputChannel, storeData);
+  siteActionSchema.checkSchemaFile();
 
-  if (extConfiguration.allowTelemetry) {
-    let eventProps = {
-      schema: SiteActionSchema.LocalSchemaFilename,
-      refresh: performRefresh,
-      status: LocalSchemaStatus[siteActionFileStatus]
-    };
-    AppInsights.defaultClient.trackEvent({ name: 'activate-extension', properties: eventProps });
-  }
-
-  let serveFileStatus = await Utilities.getLocalFileStatus(vscode.Uri.joinPath(context.extensionUri, ServeSchema.LocalSchemaFilename));
-  performRefresh = (serveFileStatus != LocalSchemaStatus.current);
-
-  localStatusMessage = `Local serve schema status: ${LocalSchemaStatus[serveFileStatus]}`;
-  (serveFileStatus === LocalSchemaStatus.current)
-    ? logger.info(localStatusMessage)
-    : logger.warn(localStatusMessage);
-
-  if (performRefresh) {
-    await ServeSchema.getAndRefreshSchema(extConfiguration.serveSchemaUrl, outputChannel, storeData);
-  }
-
-  if (extConfiguration.allowTelemetry) {
-    let eventProps = {
-      schema: ServeSchema.LocalSchemaFilename,
-      refresh: performRefresh,
-      status: LocalSchemaStatus[serveFileStatus]
-    };
-    AppInsights.defaultClient.trackEvent({ name: 'activate-extension', properties: eventProps });
-  }
+  let serveSchema = new ServeSchema(context, extConfiguration, outputChannel, storeData);
+  serveSchema.checkSchemaFile();
 
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
   let disposable = vscode.commands.registerCommand('sitedesign-schema.refreshSchema', () => {
-    SiteActionSchema.getAndRefreshSchema(extConfiguration.schemaUrl, outputChannel, storeData);
+    let siteActionSchema = new SiteActionSchema(context, extConfiguration, outputChannel, storeData);
+    siteActionSchema.getAndRefreshSchema();
 
     // Display a message box to the user
     vscode.window.showInformationMessage('Refresh queued');
- 
-    if (extConfiguration.allowTelemetry) {
-      let eventProps = {
-        schema: ServeSchema.LocalSchemaFilename,
-        refresh: true,
-        status: LocalSchemaStatus[siteActionFileStatus]
-      };
-      AppInsights.defaultClient.trackEvent({ name: 'sitedesign-schema.refreshSchema', properties: eventProps });
+
+    if (extConfiguration.allowTelemetry && 
+        context.extensionMode === vscode.ExtensionMode.Production) {
+      AppInsights.defaultClient.trackEvent({ name: 'sitedesign-schema.refreshSchema' });
     }
 
   });
 
   disposable = vscode.commands.registerCommand('sitedesign-schema.refreshServeSchema', () => {
-    ServeSchema.getAndRefreshSchema(extConfiguration.serveSchemaUrl, outputChannel, storeData);
+    let serveSchema = new ServeSchema(context, extConfiguration, outputChannel, storeData);
+    serveSchema.getAndRefreshSchema();
 
     // Display a message box to the user
     vscode.window.showInformationMessage('Refresh queued');
 
-    if (extConfiguration.allowTelemetry) {
-      let eventProps = {
-        schema: ServeSchema.LocalSchemaFilename,
-        refresh: true,
-        status: LocalSchemaStatus[serveFileStatus]
-      };
-      AppInsights.defaultClient.trackEvent({ name: 'sitedesign-schema.refreshServeSchema', properties: eventProps });
+    if (extConfiguration.allowTelemetry &&
+        context.extensionMode === vscode.ExtensionMode.Production) {
+      AppInsights.defaultClient.trackEvent({ name: 'sitedesign-schema.refreshServeSchema' });
     }
 
   });
@@ -128,10 +89,12 @@ export async function activate(context: vscode.ExtensionContext) {
       logger.info("Reloading configuration");
       extConfiguration = vscode.workspace.getConfiguration().get<ISiteDesignSchemaConfiguration>('sitedesign-schema');
 
-      // TODO: Refactor so all the work in activate is handled in different functions.
-      //       That way I can re-run them on config change...
+      // check the files..
+      let siteActionSchema = new SiteActionSchema(context, extConfiguration, outputChannel, storeData);
+      siteActionSchema.checkSchemaFile();
 
-
+      let serveSchema = new ServeSchema(context, extConfiguration, outputChannel, storeData);
+      serveSchema.checkSchemaFile();
     }
 
   }));
@@ -147,7 +110,7 @@ async function storeData(schema: any, schemaFilePath: string) {
 
 function setupAppInsights() {
   AppInsights.setup('9b0d2858-d71c-494d-a19a-ee9950352bdf');
-  //delete AppInsights.defaultClient.context.tags['ai.cloud.roleInstance'];
+  delete AppInsights.defaultClient.context.tags['ai.cloud.roleInstance'];
   AppInsights.Configuration.setAutoCollectExceptions(true);
   AppInsights.Configuration.setAutoCollectPerformance(true);
   AppInsights.defaultClient.commonProperties = {
