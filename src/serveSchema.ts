@@ -163,13 +163,11 @@ export class ServeSchema {
       schema.definitions = definitions;
 
       schema.properties.serveConfigurations = {
-        "serveConfigurations": {
-          "oneOf": [
-            {
-              "$ref": "#/definitions/serveConfigurations"
-            }
-          ]
-        },
+        "oneOf": [
+          {
+            "$ref": "#/definitions/serveConfigurations"
+          }
+        ]
       };
 
 
