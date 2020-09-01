@@ -12,7 +12,7 @@ export default class Logger {
   private initialize() {
     if (!this._outputChannel) {
       // Only init once
-      this._outputChannel = window.createOutputChannel('Peacock');
+      this._outputChannel = window.createOutputChannel('SPFx Schema');
     }
   }
 

@@ -2,9 +2,10 @@
 
 All notable changes to the "sitedesign-schema" extension will be documented in this file.
 
-## [2.2.0] - 2020-07-31
+## [2.2.1] - 2020-07-31
 ### Added
 - Added processing of `serve.json` in the `config` folder of SPFx projects
+- Improved error handling
 ### Changed
 - Replace custom telemetry with vscode-extension-telemetry module
 - Removed custom configuration setting for telemetry. See https://code.visualstudio.com/docs/getstarted/telemetry

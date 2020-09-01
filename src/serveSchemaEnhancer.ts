@@ -6,8 +6,13 @@ import { ISchemaEnhancer } from "./ISchemaEnhancer";
 import { Utilities } from "./utilities";
 
 export class ServeSchemaEnhancer implements ISchemaEnhancer {
-  localFilename: string;
-  configurationKey: string;
+  public get localFilename(): string {
+    return "serve.schema.json";
+  }
+
+  public get configurationKey(): string {
+    return "serveSchemaUrl";
+  }
 
   public async enhance(schemaUrl: string, localFileUri: vscode.Uri, reporter: TelemetryReporter, logger: Logger): Promise<void> {
     try {

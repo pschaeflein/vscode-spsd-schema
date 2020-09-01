@@ -37,54 +37,82 @@ export async function activate(context: vscode.ExtensionContext) {
   logger = new Logger();
   // ensure it gets property disposed
   context.subscriptions.push(logger);
-  
+
   // get the user-editable configuration
   configSection = vscode.workspace.getConfiguration('sitedesign-schema');
 
-  schemaFilesToProcess.map((enhancer, index) => checkSchema(context.extensionUri, configSection, enhancer));
+  try {
+    schemaFilesToProcess.map((enhancer, index) => checkSchema(context.extensionUri, configSection, enhancer));
+  }
+  catch (error) {
+    logger.info(error);
+    reporter.sendTelemetryException(error);
+  }
 
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
-  let disposable = vscode.commands.registerCommand('sitedesign-schema.refreshSchema', () => {
-    reporter.sendTelemetryEvent("sitedesign-schema.refreshSchema");
-    checkSchema(context.extensionUri, configSection, new SiteActionSchemaEnhancer())
-    vscode.window.showInformationMessage('Refresh complete');
+  const siteActionCommand = vscode.commands.registerCommand('sitedesign-schema.refreshSchema', () => {
+    reporter.sendTelemetryEvent("command.refreshSiteDesignSchema");
+    try {
+      checkSchema(context.extensionUri, configSection, new SiteActionSchemaEnhancer(), true)
+      vscode.window.showInformationMessage('Refresh complete');
+    } catch (error) {
+      logger.info(error);
+      reporter.sendTelemetryException(error);
+      vscode.window.showInformationMessage('Refresh failed');
+    }
   });
+  context.subscriptions.push(siteActionCommand);
 
-  disposable = vscode.commands.registerCommand('sitedesign-schema.refreshServeSchema', () => {
-    reporter.sendTelemetryEvent("sitedesign-schema.refreshServeSchema");
-    checkSchema(context.extensionUri, configSection, new ServeSchemaEnhancer())
-    vscode.window.showInformationMessage('Refresh complete');
+  const serveCommand = vscode.commands.registerCommand('sitedesign-schema.refreshServeSchema', () => {
+    reporter.sendTelemetryEvent("command.refreshServeSchema");
+    try {
+      checkSchema(context.extensionUri, configSection, new ServeSchemaEnhancer(), true);
+      vscode.window.showInformationMessage('Refresh complete');
+    } catch (error) {
+      logger.info(error);
+      reporter.sendTelemetryException(error);
+      vscode.window.showInformationMessage('Refresh failed');
+    }
   });
+  context.subscriptions.push(serveCommand);
 
-  // Example: Listening to configuration changes
-  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
 
+  const onDidChangeConfiguration = vscode.workspace.onDidChangeConfiguration(e => {
     if (e.affectsConfiguration('sitedesign-schema')) {
       logger.info("Reloading configuration");
       configSection = vscode.workspace.getConfiguration('sitedesign-schema');
 
-      // check the files..
-      schemaFilesToProcess.map((enhancer, index) => checkSchema(context.extensionUri, configSection, enhancer, true));
+      try {
+        schemaFilesToProcess.map((enhancer, index) => checkSchema(context.extensionUri, configSection, enhancer, true));
+      } catch (error) {
+        logger.info(error);
+        reporter.sendTelemetryException(error);
+        vscode.window.showInformationMessage('Refresh failed');
+      }
     }
-
-  }));
-
-  context.subscriptions.push(disposable);
+  });
+  context.subscriptions.push(onDidChangeConfiguration);
 }
 
 async function checkSchema(extensionUri: vscode.Uri, configSection: vscode.WorkspaceConfiguration, enhancer: ISchemaEnhancer, forceUpdate: boolean = false) {
   let localFileUri = vscode.Uri.joinPath(extensionUri, enhancer.localFilename)
   let status = await Utilities.getLocalFileStatus(localFileUri);
 
-  if (status !== LocalSchemaStatus.current) {
+  let eventProps = {
+    "extension.schema": enhancer.localFilename,
+    "extension.schemaStatus": LocalSchemaStatus[status]
+  };
+  reporter.sendTelemetryEvent("refresh-schema", eventProps)
+
+  if (status !== LocalSchemaStatus.current || forceUpdate) {
     let schemaUrl = configSection.get<string>(enhancer.configurationKey);
     await enhancer.enhance(schemaUrl, localFileUri, reporter, logger);
   }
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() { 
+export function deactivate() {
 }
