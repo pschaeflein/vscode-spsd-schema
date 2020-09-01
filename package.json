@@ -58,11 +58,6 @@
       {
         "title": "SPFx Schemas",
         "properties": {
-          "sitedesign-schema.allowTelemetry": {
-            "type": "boolean",
-            "default": true,
-            "description": "Allow anonymous telemetry for bug tracking"
-          },
           "sitedesign-schema.schemaUrl": {
             "type": "string",
             "default": "https://developer.microsoft.com/json-schemas/sp/site-design-script-actions.schema.json",
@@ -105,8 +100,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
-    "applicationinsights": "^1.8.2",
-    "chalk": "^4.1.0",
-    "json-schema-ref-parser": "^9.0.3"
+    "json-schema-ref-parser": "^9.0.3",
+    "vscode-extension-telemetry": "^0.1.6"
   }
 }

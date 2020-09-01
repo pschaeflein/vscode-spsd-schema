@@ -27,6 +27,11 @@ export class Utilities {
 
     return Promise.resolve(status);
   }
+
+  public static async saveFile(data: any, fileUri: vscode.Uri): Promise<void> {
+    const writeData = Buffer.from(JSON.stringify(data, null, 2), 'utf8')
+    return vscode.workspace.fs.writeFile(fileUri, writeData);
+  }
 }
 
 export enum LocalSchemaStatus {

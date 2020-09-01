@@ -1,57 +1,27 @@
 import * as vscode from 'vscode';
-import * as AppInsights from 'applicationinsights';
-import * as $RefParser from 'json-schema-ref-parser';
-import { Utilities, LocalSchemaStatus } from './utilities';
-import { ISiteDesignSchemaConfiguration } from './ISiteDesignSchemaConfiguration';
+import { ISchemaEnhancer } from "./ISchemaEnhancer";
+import TelemetryReporter from "vscode-extension-telemetry";
+import Logger from "./logger";
+import $RefParser = require("json-schema-ref-parser");
+import { Utilities } from "./utilities";
 
-export class SiteActionSchema {
-  static LocalSchemaFilename: string = "sitescript.schema.json";
+export class SiteActionSchemaEnhancer implements ISchemaEnhancer {
 
-  private context: vscode.ExtensionContext;
-  private configuration: ISiteDesignSchemaConfiguration;
-  private outputChannel: vscode.OutputChannel;  
-  private storeData: (schema: any, schemaFilePath: string) => Promise<void>;
-
-  public constructor(
-    context: vscode.ExtensionContext, 
-    configuration: ISiteDesignSchemaConfiguration, 
-    outputChannel: vscode.OutputChannel, 
-    storeData: (schema: any, schemaFilePath: string) => Promise<void>) {
-        this.context = context;
-        this.configuration = configuration;
-        this.outputChannel = outputChannel;
-        this.storeData = storeData;
+  public get localFilename(): string {
+    return "sitescript.schema.json";
   }
 
-  public async checkSchemaFile()
-  {
-    let siteActionFileStatus = await Utilities.getLocalFileStatus(vscode.Uri.joinPath(this.context.extensionUri, SiteActionSchema.LocalSchemaFilename));
-    let performRefresh = (siteActionFileStatus != LocalSchemaStatus.current);
-
-    let localStatusMessage = `Local Site Action schema status: ${LocalSchemaStatus[siteActionFileStatus]}`;
-    this.outputChannel.appendLine(localStatusMessage);
-
-    if (performRefresh) {
-      await this.getAndRefreshSchema();  //extConfiguration.schemaUrl, this.outputChannel, storeData
-    }
-
-    if (this.configuration.allowTelemetry && this.context.extensionMode === vscode.ExtensionMode.Production) {
-      let eventProps = {
-        schema: SiteActionSchema.LocalSchemaFilename,
-        refresh: performRefresh,
-        status: LocalSchemaStatus[siteActionFileStatus]
-      };
-      AppInsights.defaultClient.trackEvent({ name: 'refresh-schema', properties: eventProps });
-    }
+  public get configurationKey(): string {
+    return "schemaUrl"
   }
+  public async enhance(schemaUrl: string, localFileUri: vscode.Uri, reporter: TelemetryReporter, logger: Logger): Promise<void> {
 
-  public async getAndRefreshSchema() {
     const patternEnumStart = "^(";
     const patternEnumEnd = ")$";
 
     try {
-      const schema = await $RefParser.parse(this.configuration.schemaUrl);
-      this.outputChannel.appendLine("schema downloaded");
+      const schema = await $RefParser.parse(schemaUrl);
+      logger.info(`schema downloaded ${schemaUrl}`);
 
       const actionsProp = schema.properties["actions"] as $RefParser.JSONSchema;
       const actionItems = actionsProp["items"] as $RefParser.JSONSchema;
@@ -115,7 +85,6 @@ export class SiteActionSchema {
 
               snippetTabstop = `"${requiredPropName}": "$${++snippetTabstopId}"`;
               snippetBodyItems.push(snippetTabstop);
-              //snippetBodyItems.push("\"" + requiredPropName + "\": \"$" + ++snippetTabstopId + "\"")
             }
           }
 
@@ -132,15 +101,15 @@ export class SiteActionSchema {
       let ai2 = actionItems as any;
       ai2.defaultSnippets = actionItemsSnippets;
 
-      await this.storeData(schema, SiteActionSchema.LocalSchemaFilename);
+      await Utilities.saveFile(schema, localFileUri);
 
-      this.outputChannel.appendLine("schema refresh complete");
+      logger.info("schema refresh complete");
     } catch (error) {
-      this.outputChannel.appendLine(error);
-      if (this.configuration.allowTelemetry && this.context.extensionMode === vscode.ExtensionMode.Production) {
-        AppInsights.defaultClient.trackException(error);
-      }
+      logger.info(error);
+      reporter.sendTelemetryException(error);
     }
+
+    return Promise.resolve();
   }
 
 }

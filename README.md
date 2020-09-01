@@ -1,6 +1,6 @@
 # SPFx Schema extension
 
-Add snippets to the JSON schema for SharePoint site script actions and `gulp serve` configurations.
+Add snippets and descriptions to the JSON schema for SharePoint site script actions and `gulp serve` configurations.
 
 ## Features
 
@@ -20,6 +20,7 @@ The local, enhanced copy of the schema is downloaded when a site script json fil
 
 This extension will download the current JSON schema for SPFx `gulp serve` configurations and process the file to:
 - add missing elements to the schema
+- add descriptions based on Microsoft documentation at https://docs.microsoft.com/en-us/sharepoint/dev/spfx/debug-modern-pages
 - inject snippets for VSCode
 
 ## Commands
@@ -38,3 +39,7 @@ The refresh command will download and process the official JSON schema document 
 Files with the suffix `.sitescript.json` are associated with local, enhanced schema file ({extensionPath}/sharepoint.sitescript.json)
 
 The file at `config\serve.json` is associated with local, enhanced schema file ({extensionPath}/serve.schema.json)
+
+## Telemetry
+
+This extension uses the VS Code configuration and code for recording anonymous telemetry. This can be disabled following the instructions here: https://code.visualstudio.com/docs/getstarted/telemetry
